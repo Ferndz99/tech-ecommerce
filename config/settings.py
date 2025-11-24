@@ -197,6 +197,43 @@ DJOSER = {
     "PASSWORD_RESET_SHOW_EMAIL_NOT_FOUND": True,
     "PASSWORD_CHANGED_EMAIL_CONFIRMATION": True,
     "TOKEN_MODEL": None,
+    "HIDE_USERS": True,
+    "PERMISSIONS": {
+        "activation": ["rest_framework.permissions.AllowAny"],
+        "password_reset": ["rest_framework.permissions.AllowAny"],
+        "password_reset_confirm": ["rest_framework.permissions.AllowAny"],
+        "set_password": ["djoser.permissions.CurrentUserOrAdmin"],
+        "username_reset": ["rest_framework.permissions.AllowAny"],
+        "username_reset_confirm": ["rest_framework.permissions.AllowAny"],
+        "set_username": ["djoser.permissions.CurrentUserOrAdmin"],
+        "user_create": ["rest_framework.permissions.AllowAny"],
+        "user_delete": ["djoser.permissions.CurrentUserOrAdmin"],
+        "user": ["djoser.permissions.CurrentUserOrAdmin"],
+        "user_list": ["djoser.permissions.CurrentUserOrAdmin"],
+        "token_create": ["rest_framework.permissions.AllowAny"],
+        "token_destroy": ["rest_framework.permissions.IsAuthenticated"],
+    },
+    "SERIALIZERS": {
+        "activation": "djoser.serializers.ActivationSerializer",
+        "password_reset": "djoser.serializers.SendEmailResetSerializer",
+        "password_reset_confirm": "djoser.serializers.PasswordResetConfirmSerializer",
+        "password_reset_confirm_retype": "djoser.serializers.PasswordResetConfirmRetypeSerializer",
+        "set_password": "djoser.serializers.SetPasswordSerializer",
+        "set_password_retype": "djoser.serializers.SetPasswordRetypeSerializer",
+        "set_username": "djoser.serializers.SetUsernameSerializer",
+        "set_username_retype": "djoser.serializers.SetUsernameRetypeSerializer",
+        "username_reset": "djoser.serializers.SendEmailResetSerializer",
+        "username_reset_confirm": "djoser.serializers.UsernameResetConfirmSerializer",
+        "username_reset_confirm_retype": "djoser.serializers.UsernameResetConfirmRetypeSerializer",
+        "user_create": "djoser.serializers.UserCreateSerializer",
+        "user_create_password_retype": "djoser.serializers.UserCreatePasswordRetypeSerializer",
+        "user_delete": "djoser.serializers.UserDeleteSerializer",
+        "user": "djoser.serializers.UserSerializer",
+        "current_user": "djoser.serializers.UserSerializer",
+        "token": "djoser.serializers.TokenSerializer",
+        "token_create": "djoser.serializers.TokenCreateSerializer",
+        "provider_auth": "djoser.social.serializers.ProviderAuthSerializer",
+    },
 }
 
 
@@ -216,7 +253,6 @@ EMAIL_BACKEND = (
     if DEBUG
     else "django.core.mail.backends.smtp.EmailBackend"
 )
-
 
 
 """
@@ -271,7 +307,6 @@ CACHES = {
 }
 
 
-
 """
 --------------------
 EASY THUMBNAILS CONFIGURATION
@@ -283,7 +318,6 @@ THUMBNAIL_ALIASES = {
         "default": {"size": (50, 50), "crop": True},
     },
 }
-
 
 
 """
@@ -379,7 +413,6 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
 
 
-
 """
 --------------------
 URL AND TEMPLATE CONFIGURATION
@@ -445,7 +478,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-
 """
 --------------------
 INTERNATIONALIZATION AND TIME ZONE
@@ -458,7 +490,6 @@ TIME_ZONE = "America/Santiago"
 USE_I18N = True
 
 USE_TZ = True
-
 
 
 """
