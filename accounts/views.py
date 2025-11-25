@@ -80,7 +80,7 @@ class TokenRefreshView(APIView):
         refresh_token = request.COOKIES.get("refresh_token")
 
         if not refresh_token:
-            raise ValidationError("Refresh token not found in cookies.")
+            raise ValidationError({"error": ["Refresh token not found in cookies."]})
 
         try:
             refresh = RefreshToken(refresh_token)
@@ -89,9 +89,9 @@ class TokenRefreshView(APIView):
             return Response({"access": access_token}, status=status.HTTP_200_OK)
 
         except TokenError as e:
-            raise ValidationError(
-                {"refresh_token": ["Invalid or expired refresh token."]}
-            )
+            raise ValidationError({"error": ["Invalid or expired refresh token."]})
+        except Exception as exc:
+            raise ValidationError({"error": [f"Unexpected refresh error: {str(exc)}"]})
 
 
 class AccountLogoutView(APIView):
@@ -106,7 +106,7 @@ class AccountLogoutView(APIView):
         refresh_token = request.COOKIES.get("refresh_token")
 
         if not refresh_token:
-            raise ValidationError("Refresh token not provided in cookies.")
+            raise ValidationError({"error": ["Refresh token not found in cookies."]})
 
         try:
             refresh = RefreshToken(refresh_token)
@@ -126,8 +126,8 @@ class AccountLogoutView(APIView):
 
             return response
 
-        except TokenError:
-            raise AuthenticationFailed("Invalid or expired refresh token")
+        except TokenError as e:
+            raise ValidationError({"error": ["Invalid or expired refresh token."]})
 
         except Exception as exc:
-            raise ValidationError(f"Unexpected logout error: {str(exc)}")
+            raise ValidationError({"error": [f"Unexpected logout error: {str(exc)}"]})
