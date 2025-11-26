@@ -11,7 +11,11 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 from djoser.views import UserViewSet
 
-from .serializers import AccountLoginSerializer, CustomTokenObtainPairSerializer
+
+from .serializers import (
+    AccountLoginSerializer,
+    CustomTokenObtainPairSerializer
+)
 
 
 class CustomAccountViewSet(UserViewSet):
@@ -36,6 +40,7 @@ class AccountLoginAPIView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
+    
     def post(self, request):
         login_serializer = AccountLoginSerializer(
             data=request.data, context={"request": request}

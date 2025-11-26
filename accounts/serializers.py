@@ -101,3 +101,10 @@ class ProblemDetailsSerializer(serializers.Serializer):
         required=False,
         help_text="Lista de errores de validación por campo"
     ) # type: ignore
+
+
+class AccountLoginResponseSerializer(serializers.Serializer):
+    access = serializers.CharField()
+
+class DetailResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField()
