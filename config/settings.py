@@ -46,6 +46,8 @@ ACCESS_TOKEN_LIFETIME = int(env("ACCESS_TOKEN_LIFETIME"))  # type: ignore
 
 REFRESH_TOKEN_LIFETIME = int(env("REFRESH_TOKEN_LIFETIME"))  # type: ignore
 
+AUTH_USER_MODEL = "accounts.Account"
+
 
 """
 --------------------
@@ -85,6 +87,8 @@ INSTALLED_APPS = [
     "django_filters",
     "djmoney",
     "taggit",
+    # local
+    "accounts",
 ]
 
 MIDDLEWARE = [
@@ -123,6 +127,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    "EXCEPTION_HANDLER": "config.exceptions.custom_exception_handler",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -193,6 +198,43 @@ DJOSER = {
     "PASSWORD_RESET_SHOW_EMAIL_NOT_FOUND": True,
     "PASSWORD_CHANGED_EMAIL_CONFIRMATION": True,
     "TOKEN_MODEL": None,
+    "HIDE_USERS": True,
+    "PERMISSIONS": {
+        "activation": ["rest_framework.permissions.AllowAny"],
+        "password_reset": ["rest_framework.permissions.AllowAny"],
+        "password_reset_confirm": ["rest_framework.permissions.AllowAny"],
+        "set_password": ["djoser.permissions.CurrentUserOrAdmin"],
+        "username_reset": ["rest_framework.permissions.AllowAny"],
+        "username_reset_confirm": ["rest_framework.permissions.AllowAny"],
+        "set_username": ["djoser.permissions.CurrentUserOrAdmin"],
+        "user_create": ["rest_framework.permissions.AllowAny"],
+        "user_delete": ["djoser.permissions.CurrentUserOrAdmin"],
+        "user": ["djoser.permissions.CurrentUserOrAdmin"],
+        "user_list": ["djoser.permissions.CurrentUserOrAdmin"],
+        "token_create": ["rest_framework.permissions.AllowAny"],
+        "token_destroy": ["rest_framework.permissions.IsAuthenticated"],
+    },
+    "SERIALIZERS": {
+        "activation": "djoser.serializers.ActivationSerializer",
+        "password_reset": "djoser.serializers.SendEmailResetSerializer",
+        "password_reset_confirm": "djoser.serializers.PasswordResetConfirmSerializer",
+        "password_reset_confirm_retype": "djoser.serializers.PasswordResetConfirmRetypeSerializer",
+        "set_password": "djoser.serializers.SetPasswordSerializer",
+        "set_password_retype": "djoser.serializers.SetPasswordRetypeSerializer",
+        "set_username": "djoser.serializers.SetUsernameSerializer",
+        "set_username_retype": "djoser.serializers.SetUsernameRetypeSerializer",
+        "username_reset": "djoser.serializers.SendEmailResetSerializer",
+        "username_reset_confirm": "djoser.serializers.UsernameResetConfirmSerializer",
+        "username_reset_confirm_retype": "djoser.serializers.UsernameResetConfirmRetypeSerializer",
+        "user_create": "djoser.serializers.UserCreateSerializer",
+        "user_create_password_retype": "djoser.serializers.UserCreatePasswordRetypeSerializer",
+        "user_delete": "djoser.serializers.UserDeleteSerializer",
+        "user": "djoser.serializers.UserSerializer",
+        "current_user": "djoser.serializers.UserSerializer",
+        "token": "djoser.serializers.TokenSerializer",
+        "token_create": "djoser.serializers.TokenCreateSerializer",
+        "provider_auth": "djoser.social.serializers.ProviderAuthSerializer",
+    },
 }
 
 
@@ -212,7 +254,6 @@ EMAIL_BACKEND = (
     if DEBUG
     else "django.core.mail.backends.smtp.EmailBackend"
 )
-
 
 
 """
@@ -267,7 +308,6 @@ CACHES = {
 }
 
 
-
 """
 --------------------
 EASY THUMBNAILS CONFIGURATION
@@ -281,7 +321,6 @@ THUMBNAIL_ALIASES = {
 }
 
 
-
 """
 --------------------
 LOGGING CONFIGURATION
@@ -291,61 +330,61 @@ Logs are sent to stdout so Docker/Kubernetes can aggregate them.
 """
 LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "simple": {
-            "format": "[{levelname}] {message}",
-            "style": "{",
-        },
-        "verbose": {
-            "format": "{asctime} [{levelname}] {name}: {message}",
-            "style": "{",
-        },
-        "json": {
-            "format": '{{"timestamp": "{asctime}", "level": "{levelname}", "logger": "{name}", "message": "{message}"}}',
-            "style": "{",
-        },
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "verbose" if DEBUG else "json",
-        },
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": LOG_LEVEL,
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["console"],
-            "level": LOG_LEVEL,
-            "propagate": False,
-        },
-        "django.request": {
-            "handlers": ["console"],
-            "level": "WARNING",
-            "propagate": False,
-        },
-        "django.db.backends": {
-            "handlers": ["console"],
-            "level": "DEBUG" if DEBUG else "INFO",
-            "propagate": False,
-        },
-        "accounts": {
-            "handlers": ["console"],
-            "level": LOG_LEVEL,
-            "propagate": True,
-        },
-        "urllib3": {
-            "handlers": ["console"],
-            "level": "WARNING",
-            "propagate": False,
-        },
-    },
-}
+# LOGGING = {
+#     "version": 1,
+#     "disable_existing_loggers": False,
+#     "formatters": {
+#         "simple": {
+#             "format": "[{levelname}] {message}",
+#             "style": "{",
+#         },
+#         "verbose": {
+#             "format": "{asctime} [{levelname}] {name}: {message}",
+#             "style": "{",
+#         },
+#         "json": {
+#             "format": '{{"timestamp": "{asctime}", "level": "{levelname}", "logger": "{name}", "message": "{message}"}}',
+#             "style": "{",
+#         },
+#     },
+#     "handlers": {
+#         "console": {
+#             "class": "logging.StreamHandler",
+#             "formatter": "verbose" if DEBUG else "json",
+#         },
+#     },
+#     "root": {
+#         "handlers": ["console"],
+#         "level": LOG_LEVEL,
+#     },
+#     "loggers": {
+#         "django": {
+#             "handlers": ["console"],
+#             "level": LOG_LEVEL,
+#             "propagate": False,
+#         },
+#         "django.request": {
+#             "handlers": ["console"],
+#             "level": "WARNING",
+#             "propagate": False,
+#         },
+#         "django.db.backends": {
+#             "handlers": ["console"],
+#             "level": "DEBUG" if DEBUG else "INFO",
+#             "propagate": False,
+#         },
+#         "accounts": {
+#             "handlers": ["console"],
+#             "level": LOG_LEVEL,
+#             "propagate": True,
+#         },
+#         "urllib3": {
+#             "handlers": ["console"],
+#             "level": "WARNING",
+#             "propagate": False,
+#         },
+#     },
+# }
 
 
 """
@@ -373,7 +412,6 @@ if not DEBUG:
     X_FRAME_OPTIONS = "DENY"
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
-
 
 
 """
@@ -441,7 +479,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-
 """
 --------------------
 INTERNATIONALIZATION AND TIME ZONE
@@ -454,7 +491,6 @@ TIME_ZONE = "America/Santiago"
 USE_I18N = True
 
 USE_TZ = True
-
 
 
 """
