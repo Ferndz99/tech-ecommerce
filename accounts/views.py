@@ -5,11 +5,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.exceptions import ValidationError, AuthenticationFailed
+from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
 
 from djoser.views import UserViewSet
+from djoser.serializers import UserSerializer
 
 from drf_spectacular.utils import (
     extend_schema,
@@ -26,7 +28,728 @@ from .serializers import (
     DetailResponseSerializer,
 )
 
+from .constants import (
+    TAG_ACCOUNT,
+    TAG_ACCOUNT_ACTIVATION,
+    TAG_ADMIN_ACCOUNT,
+    TAG_AUTHENTICATION,
+    TAG_PASSWORD_RESET,
+)
 
+
+@extend_schema_view(
+    create=extend_schema(
+        tags=[TAG_ACCOUNT],
+        summary="Create a new account",
+        description="Endpoint to create a new account.",
+        responses={
+            status.HTTP_201_CREATED: OpenApiResponse(
+                description="Account created successfully",
+                response=UserSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="AccountCreated",
+                        summary="Successful account creation",
+                        value={"id": 1, "email": "new_user@email.com"},
+                    )
+                ],
+            ),
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Validation error",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="ValidationErrorMissingFields",
+                        summary="Example of missing required fields",
+                        value={
+                            "type": "https://httpstatuses.com/400",
+                            "status": 400,
+                            "title": "Validation Error",
+                            "instance": "/api/v1/accounts/",
+                            "detail": "The submitted data failed validation.",
+                            "errors": [
+                                {
+                                    "field": "email",
+                                    "message": "This field is required.",
+                                },
+                                {
+                                    "field": "password",
+                                    "message": "This field is required.",
+                                },
+                                {
+                                    "field": "re_password",
+                                    "message": "This field is required.",
+                                },
+                            ],
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+    list=extend_schema(
+        tags=[TAG_ADMIN_ACCOUNT],
+        summary="List accounts",
+        description="Retrieve a paginated list of all accounts.",
+        responses={
+            status.HTTP_200_OK: OpenApiResponse(
+                description="List of accounts retrieved successfully.",
+                response=UserSerializer(many=True),
+                examples=[
+                    OpenApiExample(
+                        name="AccountList",
+                        summary="Paginated list of accounts",
+                        value={
+                            "count": 2,
+                            "next": None,
+                            "previous": None,
+                            "results": [
+                                {"id": 2, "email": "user2@email.com"},
+                                {"id": 1, "email": "user1@email.com"},
+                            ],
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
+                description="Authentication credentials were not provided or are invalid.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="Missing Authorization header",
+                        value={
+                            "type": "https://httpstatuses.com/401",
+                            "status": 401,
+                            "title": "Unauthorized",
+                            "instance": "/api/v1/accounts/",
+                            "detail": "Authentication credentials were not provided.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+    retrieve=extend_schema(
+        tags=[TAG_ADMIN_ACCOUNT],
+        summary="Retrieve account details",
+        description="Fetch a specific account by ID.",
+        responses={
+            status.HTTP_200_OK: OpenApiResponse(
+                description="Account details",
+                response=UserSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="AccountDetail",
+                        summary="Details for a single account",
+                        value={"id": 1, "email": "user1@email.com"},
+                    )
+                ],
+            ),
+            status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
+                description="Authentication credentials were not provided or are invalid.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="Missing Authorization header",
+                        value={
+                            "type": "https://httpstatuses.com/401",
+                            "status": 401,
+                            "title": "Unauthorized",
+                            "instance": "/api/v1/accounts/some_id/",
+                            "detail": "Authentication credentials were not provided.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_404_NOT_FOUND: OpenApiResponse(
+                description="Account not found",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Account not found",
+                        value={
+                            "type": "https://httpstatuses.com/404",
+                            "status": 404,
+                            "title": "Not Found",
+                            "instance": "/api/v1/accounts/some_id/",
+                            "detail": "The requested resource was not found.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/some_id",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+    update=extend_schema(
+        tags=[TAG_ADMIN_ACCOUNT],
+        summary="Update an account",
+        description="Update email or profile fields for a specific user.",
+        responses={
+            status.HTTP_200_OK: OpenApiResponse(
+                description="Account updated successfully",
+                response=UserSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Account updated",
+                        value={"id": 5, "email": "updated_email@example.com"},
+                    )
+                ],
+            ),
+            status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
+                description="Authentication credentials were not provided or are invalid.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="Missing Authorization header",
+                        value={
+                            "type": "https://httpstatuses.com/401",
+                            "status": 401,
+                            "title": "Unauthorized",
+                            "instance": "/api/v1/accounts/some_id/",
+                            "detail": "Authentication credentials were not provided.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_404_NOT_FOUND: OpenApiResponse(
+                description="Account not found",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Account not found",
+                        value={
+                            "type": "https://httpstatuses.com/404",
+                            "status": 404,
+                            "title": "Not Found",
+                            "instance": "/api/v1/accounts/some_id/",
+                            "detail": "The requested resource was not found.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/some_id",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+    partial_update=extend_schema(
+        tags=[TAG_ADMIN_ACCOUNT],
+        summary="Partially update an account",
+        description="Partially update email or profile fields for a user.",
+        responses={
+            status.HTTP_200_OK: OpenApiResponse(
+                description="Account updated successfully",
+                response=UserSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Account updated",
+                        value={"id": 5, "email": "updated_email@example.com"},
+                    )
+                ],
+            ),
+            status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
+                description="Authentication credentials were not provided or are invalid.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="Missing Authorization header",
+                        value={
+                            "type": "https://httpstatuses.com/401",
+                            "status": 401,
+                            "title": "Unauthorized",
+                            "instance": "/api/v1/accounts/some_id/",
+                            "detail": "Authentication credentials were not provided.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_404_NOT_FOUND: OpenApiResponse(
+                description="Account not found",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Account not found",
+                        value={
+                            "type": "https://httpstatuses.com/404",
+                            "status": 404,
+                            "title": "Not Found",
+                            "instance": "/api/v1/accounts/some_id/",
+                            "detail": "The requested resource was not found.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/some_id",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+    destroy=extend_schema(
+        tags=[TAG_ADMIN_ACCOUNT],
+        summary="Delete an account",
+        description="Delete a specific account by ID.",
+        responses={
+            status.HTTP_204_NO_CONTENT: OpenApiResponse(
+                description="Account deleted successfully"
+            ),
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Validation Error",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Missing fields",
+                        value={
+                            "type": "https://httpstatuses.com/400",
+                            "status": 400,
+                            "title": "Validation Error",
+                            "instance": "/api/v1/accounts/1/",
+                            "detail": "The submitted data failed validation.",
+                            "errors": [
+                                {
+                                    "field": "current_password",
+                                    "message": "This field is required.",
+                                }
+                            ],
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
+                description="Authentication credentials were not provided or are invalid.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="Missing Authorization header",
+                        value={
+                            "type": "https://httpstatuses.com/401",
+                            "status": 401,
+                            "title": "Unauthorized",
+                            "instance": "/api/v1/accounts/some_id/",
+                            "detail": "Authentication credentials were not provided.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_404_NOT_FOUND: OpenApiResponse(
+                description="Account not found",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Account not found",
+                        value={
+                            "type": "https://httpstatuses.com/404",
+                            "status": 404,
+                            "title": "Not Found",
+                            "instance": "/api/v1/accounts/some_id/",
+                            "detail": "The requested resource was not found.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/some_id",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+    activation=extend_schema(
+        tags=[TAG_ACCOUNT_ACTIVATION],
+        summary="Activate account",
+        description=(
+            "Activate an account using the unique UID and token sent via email. "
+        ),
+        responses={
+            status.HTTP_204_NO_CONTENT: OpenApiResponse(
+                description="Account successfully activated. No content returned."
+            ),
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Validation Error",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Missing fields",
+                        value={
+                            "type": "https://httpstatuses.com/400",
+                            "status": 400,
+                            "title": "Validation Error",
+                            "instance": "/api/v1/accounts/activation/",
+                            "detail": "The submitted data failed validation.",
+                            "errors": [
+                                {"field": "uid", "message": "This field is required."},
+                                {
+                                    "field": "token",
+                                    "message": "This field is required.",
+                                },
+                            ],
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/activation/",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+    resend_activation=extend_schema(
+        tags=[TAG_ACCOUNT_ACTIVATION],
+        summary="Resend activation email",
+        description=(
+            "Resend the activation email if the account has not been activated yet."
+        ),
+        responses={
+            status.HTTP_204_NO_CONTENT: OpenApiResponse(
+                description="Activation email resent successfully."
+            ),
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Validation Error",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Missing fields",
+                        value={
+                            "type": "https://httpstatuses.com/400",
+                            "status": 400,
+                            "title": "Validation Error",
+                            "instance": "/api/v1/accounts/resend_activation/",
+                            "detail": "The submitted data failed validation.",
+                            "errors": [
+                                {"field": "email", "message": "This field is required."}
+                            ],
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/resend_activation/",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+    reset_password=extend_schema(
+        tags=[TAG_PASSWORD_RESET],
+        summary="Request password reset",
+        description=(
+            "Send a password reset email containing a unique token to the user's email address."
+        ),
+        responses={
+            status.HTTP_204_NO_CONTENT: OpenApiResponse(
+                description="Password reset email sent successfully."
+            ),
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Validation Error",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Missing fields",
+                        value={
+                            "type": "https://httpstatuses.com/400",
+                            "status": 400,
+                            "title": "Validation Error",
+                            "instance": "/api/v1/accounts/reset_password/",
+                            "detail": "The submitted data failed validation.",
+                            "errors": [
+                                {"field": "email", "message": "This field is required."}
+                            ],
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/resend_activation/",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+    reset_password_confirm=extend_schema(
+        tags=[TAG_PASSWORD_RESET],
+        summary="Confirm password reset",
+        description=(
+            "Confirm password reset by providing the UID, token, and new password values."
+        ),
+        responses={
+            status.HTTP_204_NO_CONTENT: OpenApiResponse(
+                description="Password reset successfully completed."
+            ),
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Validation Error",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Missing fields",
+                        value={
+                            "type": "https://httpstatuses.com/400",
+                            "status": 400,
+                            "title": "Validation Error",
+                            "instance": "/api/v1/accounts/reset_password_confirm/",
+                            "detail": "The submitted data failed validation.",
+                            "errors": [
+                                {"field": "uid", "message": "This field is required."},
+                                {
+                                    "field": "token",
+                                    "message": "This field is required.",
+                                },
+                                {
+                                    "field": "new_password",
+                                    "message": "This field is required.",
+                                },
+                                {
+                                    "field": "re_new_password",
+                                    "message": "This field is required.",
+                                },
+                            ],
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/resend_activation/",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+    set_password=extend_schema(
+        tags=[TAG_PASSWORD_RESET],
+        summary="Set a new password",
+        description=(
+            "Allow authenticated users to change their password by providing the current password, "
+            "and the new password (with confirmation)."
+        ),
+        responses={
+            status.HTTP_204_NO_CONTENT: OpenApiResponse(
+                description="Password successfully updated."
+            ),
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Validation Error",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Missing fields",
+                        value={
+                            "type": "https://httpstatuses.com/400",
+                            "status": 400,
+                            "title": "Validation Error",
+                            "instance": "/api/v1/accounts/set_password/",
+                            "detail": "The submitted data failed validation.",
+                            "errors": [
+                                {
+                                    "field": "new_password",
+                                    "message": "This field is required.",
+                                },
+                                {
+                                    "field": "re_new_password",
+                                    "message": "This field is required.",
+                                },
+                                {
+                                    "field": "current_password",
+                                    "message": "This field is required.",
+                                },
+                            ],
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
+                description="Authentication credentials were not provided or are invalid.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="Missing Authorization header",
+                        value={
+                            "type": "https://httpstatuses.com/401",
+                            "status": 401,
+                            "title": "Unauthorized",
+                            "instance": "/api/v1/accounts/set_password/",
+                            "detail": "Authentication credentials were not provided.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/set_password/",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    ),
+)
 class CustomAccountViewSet(UserViewSet):
     """UserViewSet with extended documentation for OpenAPI/Swagger."""
 
@@ -39,6 +762,187 @@ class CustomAccountViewSet(UserViewSet):
     def reset_username_confirm(self, request, *args, **kwargs):
         raise NotImplementedError("This endpoint is disabled.")
 
+    @extend_schema(
+        tags=[TAG_ACCOUNT],
+        methods=["GET"],
+        summary="Retrieve current account",
+        description=("Retrieve the information of the currently authenticated user"),
+        responses={
+            status.HTTP_200_OK: OpenApiResponse(
+                description="Current account data retrieved successfully",
+                response=UserSerializer,
+                examples=[
+                    OpenApiExample("ok", value={"id": 2, "email": "admin@email.com"})
+                ],
+            ),
+            status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
+                description="Authentication credentials were not provided or are invalid.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="Missing Authorization header",
+                        value={
+                            "type": "https://httpstatuses.com/401",
+                            "status": 401,
+                            "title": "Unauthorized",
+                            "instance": "/api/v1/accounts/me/",
+                            "detail": "Authentication credentials were not provided.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/me/",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    )
+    @extend_schema(
+        tags=[TAG_ACCOUNT],
+        methods=["PUT", "PATCH"],
+        summary="Update current account",
+        description="Update account data.",
+        responses={
+            status.HTTP_200_OK: OpenApiResponse(
+                description="Account data",
+                response=UserSerializer,
+                examples=[
+                    OpenApiExample("ds", value={"id": 2, "email": "admin@email.com"})
+                ],
+            ),
+            status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
+                description="Authentication credentials were not provided or are invalid.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="Missing Authorization header",
+                        value={
+                            "type": "https://httpstatuses.com/401",
+                            "status": 401,
+                            "title": "Unauthorized",
+                            "instance": "/api/v1/accounts/me/",
+                            "detail": "Authentication credentials were not provided.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/me/",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    )
+    @extend_schema(
+        tags=[TAG_ACCOUNT],
+        summary="Delete current account",
+        description="Delete the current authenticated account. No request body required.",
+        request=None,
+        responses={
+            status.HTTP_204_NO_CONTENT: OpenApiResponse(
+                description="Account deleted succesfully"
+            ),
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Validation Error",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Missing fields",
+                        value={
+                            "type": "https://httpstatuses.com/400",
+                            "status": 400,
+                            "title": "Validation Error",
+                            "instance": "/api/v1/accounts/me/",
+                            "detail": "The submitted data failed validation.",
+                            "errors": [
+                                {
+                                    "field": "current_password",
+                                    "message": "This field is required.",
+                                }
+                            ],
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
+                description="Authentication credentials were not provided or are invalid.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        name="Missing Authorization header",
+                        value={
+                            "type": "https://httpstatuses.com/401",
+                            "status": 401,
+                            "title": "Unauthorized",
+                            "instance": "/api/v1/accounts/me/",
+                            "detail": "Authentication credentials were not provided.",
+                        },
+                    )
+                ],
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR: OpenApiResponse(
+                description="Server error during login.",
+                response=ProblemDetailsSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Server Error",
+                        summary="Server Error Example",
+                        description="Example response for server errors during login.",
+                        value={
+                            "type": "https://example.com/probs/server-error",
+                            "status": 500,
+                            "title": "Internal Server Error",
+                            "instance": "/api/v1/accounts/me/",
+                            "detail": "An unexpected error occurred. Please try again later.",
+                        },
+                        status_codes=["500"],
+                    )
+                ],
+            ),
+        },
+    )
+    @action(["get", "put", "patch", "delete"], detail=False)
+    def me(self, request, *args, **kwargs):
+        self.get_object = self.get_instance  # type: ignore
+
+        if request.method == "GET":
+            return self.retrieve(request, *args, **kwargs)
+        elif request.method == "PUT":
+            return self.update(request, *args, **kwargs)
+        elif request.method == "PATCH":
+            return self.partial_update(request, *args, **kwargs)
+        elif request.method == "DELETE":
+            return self.destroy(request, *args, **kwargs)
+
 
 class AccountLoginAPIView(APIView):
     """
@@ -50,7 +954,7 @@ class AccountLoginAPIView(APIView):
     authentication_classes = []
 
     @extend_schema(
-        tags=["Authentication"],
+        tags=[TAG_AUTHENTICATION],
         summary="User login",
         description="Validates credentials and returns a JWT access token. Sets refresh token in a secure cookie.",
         request=AccountLoginSerializer,
@@ -183,7 +1087,7 @@ class TokenRefreshView(APIView):
     authentication_classes = []
 
     @extend_schema(
-        tags=["Authentication"],
+        tags=[TAG_AUTHENTICATION],
         summary="Refresh access token",
         description="Obtains a new access token using the refresh token stored in an HTTP-only cookie.",
         responses={
@@ -284,7 +1188,7 @@ class AccountLogoutView(APIView):
     authentication_classes = []
 
     @extend_schema(
-        tags=["Authentication"],
+        tags=[TAG_AUTHENTICATION],
         summary="User logout",
         description="Logs out the user by blacklisting the refresh token and deleting the cookie.",
         responses={
