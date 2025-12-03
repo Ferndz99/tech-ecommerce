@@ -89,6 +89,7 @@ INSTALLED_APPS = [
     "taggit",
     # local
     "accounts",
+    "catalog"
 ]
 
 MIDDLEWARE = [
