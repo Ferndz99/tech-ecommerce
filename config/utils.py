@@ -1,4 +1,5 @@
 import re
+from django.db.models.deletion import ProtectedError
 
 
 def build_rfc9457_error(status_code, title, instance, detail=None, errors=None):
@@ -54,6 +55,26 @@ def flatten_errors(data, parent=""):
 
 def parse_integrity_error(exc):
     msg = str(exc)
+
+    if isinstance(exc, ProtectedError):
+        protected_objects = list(exc.protected_objects)
+
+        # Construye errores detallados si quieres
+        errors = []
+
+        for obj in protected_objects:
+            errors.append(
+                {
+                    "field": "non_field_errors",
+                    "message": f"This object is referenced by {obj._meta.model_name} '{obj}'.",
+                }
+            )
+
+        # Respuesta estandarizada
+        return (
+            "Cannot delete object because other resources depend on it.",
+            errors if errors else [{"field": "non_field_errors", "message": msg}],
+        )
 
     # UNIQUE constraint
     unique = re.search(r"UNIQUE constraint failed: (\w+)\.(\w+)", msg)
