@@ -298,6 +298,17 @@ wheels = [
 ]
 
 [[package]]
+name = "django-mptt-admin"
+version = "2.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django-mptt" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/86/d81c875242ec0b48c3e0e8cc0f58ddb9284a8622a97484819ac35e338a13/django_mptt_admin-2.9.0-py2.py3-none-any.whl", hash = "sha256:e6ea8b347c81036a4bcce555bdec8f5f672e57edd26c8c6f5f70071d0ae4fd04", size = 239773, upload-time = "2025-12-05T12:33:46.735Z" },
+]
+
+[[package]]
 name = "django-taggit"
 version = "6.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -861,6 +872,7 @@ dependencies = [
     { name = "django-filter" },
     { name = "django-money" },
     { name = "django-mptt" },
+    { name = "django-mptt-admin" },
     { name = "django-taggit" },
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
@@ -882,6 +894,7 @@ requires-dist = [
     { name = "django-filter", specifier = ">=25.2" },
     { name = "django-money", specifier = ">=3.5.4" },
     { name = "django-mptt", specifier = ">=0.18.0" },
+    { name = "django-mptt-admin", specifier = ">=2.9.0" },
     { name = "django-taggit", specifier = ">=6.1.0" },
     { name = "djangorestframework", specifier = ">=3.16.1" },
     { name = "djangorestframework-simplejwt", specifier = ">=5.5.1" },

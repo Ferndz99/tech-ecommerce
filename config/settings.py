@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     "django_filters",
     "djmoney",
     "taggit",
+    "django_mptt_admin",
     # local
     "accounts",
     "catalog"
