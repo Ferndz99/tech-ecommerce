@@ -229,7 +229,7 @@ class LifeCycleActionMixin:
         read_serializer = self.get_read_serializer_instance(instance)
         return Response(read_serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["delete"])
+    @action(detail=True, methods=["post"])
     def hard_delete(self, request, *args, **kwargs):
         """
         Permanently deletes an instance.
@@ -247,11 +247,33 @@ class LifeCycleActionMixin:
         if confirm is not True:
             return Response(
                 {
-                    "detail": "Hard delete requires confirm=true",
-                    "hint": 'Send {"confirm": true} in the request body.',
+                    "type": "https://httpstatuses.com/400",
+                    "status": 400,
+                    "title": "Validation Error",
+                    "detail": "Hard delete requires confirm=true.",
+                    "errors": [
+                        {
+                            "field": "confirm",
+                            "message": "This field must be true to confirm permanent deletion.",
+                        }
+                    ],
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
         instance = self.get_object()
         instance.hard_delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["get"])
+    def deleted(self, request):
+        queryset = self.filter_queryset(
+            self.get_queryset().filter(is_deleted=True)
+        )
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

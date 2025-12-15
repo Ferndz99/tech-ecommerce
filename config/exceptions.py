@@ -23,9 +23,9 @@ from rest_framework.exceptions import (
     ParseError,
 )
 
+from rest_framework.utils.serializer_helpers import ReturnList
+
 from .utils import build_rfc9457_error, flatten_errors, parse_integrity_error
-
-
 
 
 def custom_exception_handler(exc, context):
@@ -33,7 +33,7 @@ def custom_exception_handler(exc, context):
     instance = request.path if request else "unknown"
 
     response = exception_handler(exc, context)
-
+    print(exc)
     # ================================================================
     # CASO A: Excepciones que DRF NO maneja (response es None)
     # ================================================================
@@ -109,7 +109,26 @@ def custom_exception_handler(exc, context):
 
     status_code = response.status_code
     status_text = response.status_text
-    data_original = response.data or {}
+    data_original = response.data
+
+    if isinstance(data_original, (list, ReturnList)):
+        data = build_rfc9457_error(
+            status_code=400,
+            title="Validation Error",
+            instance=instance,
+            detail="One or more items failed validation.",
+            errors=data_original,  # se entregan tal cual, indexados
+        )
+        return Response(
+            data,
+            status=400,
+            content_type="application/problem+json",
+        )
+
+    # ================================================================
+    # 🔹 CASO NORMAL (dict)
+    # ================================================================
+    data_original = data_original or {}
 
     # Unificar extracción de detail
     detail = data_original.get("detail", None)

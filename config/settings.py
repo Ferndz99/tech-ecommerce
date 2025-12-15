@@ -90,7 +90,7 @@ INSTALLED_APPS = [
     "django_mptt_admin",
     # local
     "accounts",
-    "catalog"
+    "catalog",
 ]
 
 MIDDLEWARE = [
@@ -142,6 +142,7 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
     "DEFAULT_PARSER_CLASSES": [
+        "nested_multipart_parser.drf.DrfNestedParser",
         "rest_framework.parsers.JSONParser",
         "rest_framework.parsers.MultiPartParser",
     ],
@@ -237,6 +238,14 @@ DJOSER = {
         "token_create": "djoser.serializers.TokenCreateSerializer",
         "provider_auth": "djoser.social.serializers.ProviderAuthSerializer",
     },
+}
+
+
+DRF_NESTED_MULTIPART_PARSER = {
+    "separator": "mixed-dot",
+    "raise_duplicate": True,
+    "assign_duplicate": False,
+    "querydict": False,
 }
 
 

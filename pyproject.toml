@@ -19,6 +19,7 @@ dependencies = [
     "djoser>=2.3.3",
     "drf-spectacular>=0.29.0",
     "easy-thumbnails>=2.10.1",
+    "nested-multipart-parser>=1.6.0",
     "psycopg[binary]>=3.2.13",
     "pytest>=9.0.1",
     "pytest-django>=4.11.1",

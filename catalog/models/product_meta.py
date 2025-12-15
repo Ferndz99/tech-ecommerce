@@ -35,11 +35,11 @@ class ProductMeta(models.Model):
         return f"Meta for {self.product_variant.sku}"
 
     def save(self, *args, **kwargs):
-        """Generate QR code on save"""
         generating = self.pk is None
         super().save(*args, **kwargs)
         if generating:
             self._generate_qr_code()
+            super().save(update_fields=["qr_code"])
 
     def _generate_qr_code(self):
         """Generate QR code with product information"""

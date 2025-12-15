@@ -446,6 +446,12 @@ wheels = [
 ]
 
 [[package]]
+name = "nested-multipart-parser"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/48/b91a6f924a2abd9e86b501347ca56989e2c2b4bf3eac86bff57f80b99b75/nested_multipart_parser-1.6.0.tar.gz", hash = "sha256:8c7a07952a4a3c2cb2b99ca16158961af215c6f8c9e04337bc13da016500c69c", size = 13159, upload-time = "2025-09-17T20:47:25.627Z" }
+
+[[package]]
 name = "oauthlib"
 version = "3.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -879,6 +885,7 @@ dependencies = [
     { name = "djoser" },
     { name = "drf-spectacular" },
     { name = "easy-thumbnails" },
+    { name = "nested-multipart-parser" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pytest" },
     { name = "pytest-django" },
@@ -901,6 +908,7 @@ requires-dist = [
     { name = "djoser", specifier = ">=2.3.3" },
     { name = "drf-spectacular", specifier = ">=0.29.0" },
     { name = "easy-thumbnails", specifier = ">=2.10.1" },
+    { name = "nested-multipart-parser", specifier = ">=1.6.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.13" },
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-django", specifier = ">=4.11.1" },
