@@ -1,6 +1,6 @@
 from django.db import models
 
-from catalog.utils import generate_unique_slug
+from catalog.common.utils import generate_unique_slug
 
 from .base import TimeStampedMixin
 

@@ -1,6 +1,6 @@
 from django.db import models
 
-from catalog.utils import normalize_spec_value
+from catalog.common.utils import normalize_spec_value
 
 
 

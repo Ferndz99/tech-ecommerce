@@ -24,6 +24,7 @@ urlpatterns = [
         name="redoc",
     ),
     path("api/v1/", include("accounts.urls")),
+    path("api/v1/", include("catalog.urls")),
 ] + debug_toolbar_urls()
 
 if settings.DEBUG:

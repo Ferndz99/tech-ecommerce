@@ -298,6 +298,17 @@ wheels = [
 ]
 
 [[package]]
+name = "django-mptt-admin"
+version = "2.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django-mptt" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/86/d81c875242ec0b48c3e0e8cc0f58ddb9284a8622a97484819ac35e338a13/django_mptt_admin-2.9.0-py2.py3-none-any.whl", hash = "sha256:e6ea8b347c81036a4bcce555bdec8f5f672e57edd26c8c6f5f70071d0ae4fd04", size = 239773, upload-time = "2025-12-05T12:33:46.735Z" },
+]
+
+[[package]]
 name = "django-taggit"
 version = "6.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -433,6 +444,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/19/74/a633ee74eb36c44aa
 wheels = [
     { url = "https://files.pythonhosted.org/packages/41/45/1a4ed80516f02155c51f51e8cedb3c1902296743db0bbc66608a0db2814f/jsonschema_specifications-2025.9.1-py3-none-any.whl", hash = "sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe", size = 18437, upload-time = "2025-09-08T01:34:57.871Z" },
 ]
+
+[[package]]
+name = "nested-multipart-parser"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/48/b91a6f924a2abd9e86b501347ca56989e2c2b4bf3eac86bff57f80b99b75/nested_multipart_parser-1.6.0.tar.gz", hash = "sha256:8c7a07952a4a3c2cb2b99ca16158961af215c6f8c9e04337bc13da016500c69c", size = 13159, upload-time = "2025-09-17T20:47:25.627Z" }
 
 [[package]]
 name = "oauthlib"
@@ -861,12 +878,14 @@ dependencies = [
     { name = "django-filter" },
     { name = "django-money" },
     { name = "django-mptt" },
+    { name = "django-mptt-admin" },
     { name = "django-taggit" },
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
     { name = "djoser" },
     { name = "drf-spectacular" },
     { name = "easy-thumbnails" },
+    { name = "nested-multipart-parser" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pytest" },
     { name = "pytest-django" },
@@ -882,12 +901,14 @@ requires-dist = [
     { name = "django-filter", specifier = ">=25.2" },
     { name = "django-money", specifier = ">=3.5.4" },
     { name = "django-mptt", specifier = ">=0.18.0" },
+    { name = "django-mptt-admin", specifier = ">=2.9.0" },
     { name = "django-taggit", specifier = ">=6.1.0" },
     { name = "djangorestframework", specifier = ">=3.16.1" },
     { name = "djangorestframework-simplejwt", specifier = ">=5.5.1" },
     { name = "djoser", specifier = ">=2.3.3" },
     { name = "drf-spectacular", specifier = ">=0.29.0" },
     { name = "easy-thumbnails", specifier = ">=2.10.1" },
+    { name = "nested-multipart-parser", specifier = ">=1.6.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.13" },
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-django", specifier = ">=4.11.1" },

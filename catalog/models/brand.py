@@ -3,7 +3,7 @@ from django.db import models
 from easy_thumbnails.fields import ThumbnailerImageField
 
 from .base import LifeCycleMixin, TimeStampedMixin
-from catalog.utils import generate_unique_slug
+from catalog.common.utils import generate_unique_slug
 
 
 class Brand(LifeCycleMixin, TimeStampedMixin):
