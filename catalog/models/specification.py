@@ -1,7 +1,7 @@
 from django.db import models
 
 from .product import Product
-from catalog.utils import normalize_spec_value
+from catalog.common.utils import normalize_spec_value
 
 
 class Specification(models.Model):

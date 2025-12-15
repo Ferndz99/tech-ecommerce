@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from mptt.models import MPTTModel, TreeForeignKey
 
 from .base import LifeCycleMixin, TimeStampedMixin
-from catalog.utils import generate_unique_slug
+from catalog.common.utils import generate_unique_slug
 
 
 class Category(MPTTModel, LifeCycleMixin, TimeStampedMixin):

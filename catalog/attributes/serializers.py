@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from catalog.models.attribute import Attribute, AttributeValue
-from catalog.utils import normalize_spec_value
+from catalog.common.utils import normalize_spec_value
 
 
 class AttributeWriteSerializer(serializers.ModelSerializer):
