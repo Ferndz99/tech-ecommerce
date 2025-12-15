@@ -4,6 +4,7 @@ from django.db import models
 from django.core.validators import MinValueValidator
 
 from djmoney.models.fields import MoneyField
+from djmoney.models.validators import MinMoneyValidator
 
 from taggit.managers import TaggableManager
 
@@ -21,7 +22,9 @@ class ProductVariant(LifeCycleMixin, TimeStampedMixin):
         default_currency="CLP",
         max_digits=12,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal("0.00"))],
+        validators=[
+            MinMoneyValidator(0)
+        ],
     )
     stock = models.IntegerField(
         default=0, validators=[MinValueValidator(0)], db_index=True
