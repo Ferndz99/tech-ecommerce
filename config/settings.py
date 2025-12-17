@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     # local
     "accounts",
     "catalog",
+    "orders",
 ]
 
 MIDDLEWARE = [
