@@ -25,6 +25,7 @@ urlpatterns = [
     ),
     path("api/v1/", include("accounts.urls")),
     path("api/v1/", include("catalog.urls")),
+    path("api/v1/", include("orders.urls"))
 ] + debug_toolbar_urls()
 
 if settings.DEBUG:

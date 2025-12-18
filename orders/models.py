@@ -1,4 +1,5 @@
 # orders/models/order.py
+from datetime import timedelta, timezone
 from django.db import models
 from djmoney.models.fields import MoneyField
 from djmoney.models.validators import MinMoneyValidator
@@ -52,10 +53,12 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     total = MoneyField(
+        default_currency="CLP",
         max_digits=10,
         decimal_places=2,
         validators=[MinMoneyValidator(0)],
         editable=False,
+        null=True,
     )
 
     class Meta:
