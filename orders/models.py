@@ -1,5 +1,6 @@
 # orders/models/order.py
-from datetime import timedelta, timezone
+from datetime import timedelta
+from django.utils import timezone
 from django.db import models
 from djmoney.models.fields import MoneyField
 from djmoney.models.validators import MinMoneyValidator
@@ -61,6 +62,12 @@ class Order(models.Model):
         null=True,
     )
 
+    access_token = models.UUIDField(
+        default=uuid.uuid4, unique=True, editable=False, db_index=True
+    )
+
+    access_token_expires_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
@@ -92,6 +99,17 @@ class Order(models.Model):
     @property
     def is_guest_order(self):
         return self.account is None
+
+    def generate_guest_token(self, days=7):
+        self.access_token = uuid.uuid4()
+        self.access_token_expires_at = timezone.now() + timedelta(days=days)
+        self.save(update_fields=["access_token", "access_token_expires_at"])
+
+    def is_guest_token_valid(self):
+        return (
+            self.access_token_expires_at is None
+            or self.access_token_expires_at > timezone.now()
+        )
 
 
 class OrderItem(models.Model):

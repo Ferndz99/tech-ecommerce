@@ -1,4 +1,8 @@
 from rest_framework import viewsets, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.exceptions import NotFound, PermissionDenied
+
 from orders.models import Order
 from orders.serializers import (
     OrderWriteSerializer,
@@ -40,3 +44,26 @@ class OrderViewSet(viewsets.ModelViewSet):
             return [permissions.IsAdminUser()]
 
         return super().get_permissions()
+
+
+
+
+class GuestOrderDetailView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, token):
+        try:
+            order = (
+                Order.objects
+                .prefetch_related("items")
+                .get(access_token=token)
+            )
+        except Order.DoesNotExist:
+            raise NotFound("Orden no encontrada")
+
+        if not order.is_guest_token_valid():
+            raise PermissionDenied("Token expirado")
+
+        serializer = OrderDetailSerializer(order)
+        return Response(serializer.data)

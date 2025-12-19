@@ -29,29 +29,6 @@ class OrderItemWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("La cantidad debe ser mayor a 0.")
         return value
 
-    def create(self, validated_data):
-        variant = validated_data["product_variant_id"]
-        quantity = validated_data["quantity"]
-
-        unit_price = variant.price.amount  # 👈 MUY IMPORTANTE
-        subtotal = unit_price * quantity
-
-        return OrderItem.objects.create(
-            order=self.context["order"],
-            product_variant=variant,
-            product_id=variant.product_id,
-            product_name=variant.product.name,
-            variant_name=variant.name,
-            variant_sku=variant.sku,
-            quantity=quantity,
-            unit_price=unit_price,
-            subtotal=subtotal,
-        )
-
-
-# orders/serializers/order_item.py
-
-
 class OrderItemDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
@@ -63,10 +40,6 @@ class OrderItemDetailSerializer(serializers.ModelSerializer):
             "unit_price",
             "subtotal",
         ]
-
-
-# orders/serializers/order.py
-
 
 class OrderWriteSerializer(serializers.ModelSerializer):
     items = OrderItemWriteSerializer(many=True)
@@ -88,7 +61,39 @@ class OrderWriteSerializer(serializers.ModelSerializer):
 
     def validate_items(self, value):
         if not value:
-            raise serializers.ValidationError("La orden debe tener al menos un item.")
+            raise serializers.ValidationError("The order must have at least one item.")
+
+        seen_variants = {}
+        errors = {}
+
+        for index, item in enumerate(value):
+            variant = item["product_variant"]
+            quantity = item["quantity"]
+
+            if quantity <= 0:
+                errors[index] = {"quantity": "La cantidad debe ser mayor a 0."}
+                continue
+
+            if variant.id in seen_variants:
+                errors[index] = {
+                    "product_variant": "La variante está duplicada en la orden."
+                }
+                continue
+
+            seen_variants[variant.id] = quantity
+
+        for variant_id, total_qty in seen_variants.items():
+            variant = ProductVariant.objects.select_for_update().get(id=variant_id)
+
+            if total_qty > variant.stock:
+                errors.setdefault("stock", []).append(
+                    f"Stock insuficiente para '{variant.sku}'. "
+                    f"Disponible: {variant.stock}, solicitado: {total_qty}"
+                )
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
         return value
 
     @transaction.atomic
@@ -102,11 +107,17 @@ class OrderWriteSerializer(serializers.ModelSerializer):
             **validated_data,
         )
 
+        order.generate_guest_token(days=7)
+
         total_amount = Decimal("0.00")
 
         for item_data in items_data:
+            print(item_data)
             variant = item_data["product_variant"]
             quantity = item_data["quantity"]
+
+            variant.stock -= quantity
+            variant.save(update_fields=["stock"])
 
             unit_price = variant.price.amount
             subtotal = unit_price * quantity
@@ -128,12 +139,13 @@ class OrderWriteSerializer(serializers.ModelSerializer):
         order.total = Money(total_amount, "CLP")
         order.save(update_fields=["total"])
 
+        transaction.on_commit(lambda: send_order_confirmation_email(order))
+
         return order
 
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     items = OrderItemDetailSerializer(many=True, read_only=True)
-    is_guest_order = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Order
@@ -152,7 +164,6 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "shipping_postal_code",
             "shipping_country",
             "total",
-            "is_guest_order",
             "created_at",
             "updated_at",
             "items",
