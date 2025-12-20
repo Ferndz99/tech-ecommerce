@@ -7,8 +7,8 @@ from rest_framework import serializers
 from djmoney.money import Money
 
 from orders.models import Order, OrderItem, OrderStatusHistory
-from catalog.models.product_variant import ProductVariant
 from orders.utils import send_order_confirmation_email
+from catalog.models.product_variant import ProductVariant
 
 
 class OrderItemWriteSerializer(serializers.ModelSerializer):

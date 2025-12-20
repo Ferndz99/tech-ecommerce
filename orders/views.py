@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+
 from rest_framework import viewsets, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -7,28 +8,12 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 
 from orders.models import Order, OrderStatusHistory
 from orders.payments.webpay import create_webpay_transaction, handle_webpay_return
+from orders.permissions import IsOwnerOrGuestCreateOnly
 from orders.serializers import (
     OrderWriteSerializer,
     OrderDetailSerializer,
-    OrderItemDetailSerializer,
-    OrderItemWriteSerializer,
     OrderStatusHistorySerializer,
 )
-
-
-class IsOwnerOrGuestCreateOnly(permissions.BasePermission):
-    """
-    - Permite crear órdenes a cualquiera
-    - Solo el dueño puede ver sus órdenes
-    """
-
-    def has_permission(self, request, view):
-        if view.action == "create":
-            return True
-        return request.user and request.user.is_authenticated
-
-    def has_object_permission(self, request, view, obj):
-        return obj.account == request.user
 
 
 class OrderViewSet(viewsets.ModelViewSet):

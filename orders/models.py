@@ -1,14 +1,15 @@
-# orders/models/order.py
+import uuid
 from datetime import timedelta
+from decimal import Decimal
+
 from django.utils import timezone
 from django.db import models
-from djmoney.models.fields import MoneyField
-from djmoney.models.validators import MinMoneyValidator
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
-from decimal import Decimal
-import uuid
+
+from djmoney.models.fields import MoneyField
+from djmoney.models.validators import MinMoneyValidator
 
 
 Account = get_user_model()
@@ -24,20 +25,16 @@ class Order(models.Model):
         CONFIRMED = "confirmed", "Confirmada (pagada)"
         CANCELLED = "cancelled", "Cancelada"
 
-    # Identificador único para tracking
     order_number = models.CharField(max_length=50, unique=True, editable=False)
 
-    # Usuario (opcional para invitados)
     account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders"
     )
 
-    # Información del cliente
     customer_email = models.EmailField()
     customer_name = models.CharField(max_length=200)
     customer_phone = models.CharField(max_length=20, blank=True)
 
-    # Dirección de envío
     shipping_address_line1 = models.CharField(max_length=255)
     shipping_address_line2 = models.CharField(max_length=255, blank=True)
     shipping_city = models.CharField(max_length=100)
@@ -45,12 +42,10 @@ class Order(models.Model):
     shipping_postal_code = models.CharField(max_length=20)
     shipping_country = models.CharField(max_length=2, default="CL")
 
-    # Estado y pago
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING
     )
 
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -174,18 +169,15 @@ class OrderItem(models.Model):
 
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
 
-    # Referencia a la variante del producto
     product_variant = models.ForeignKey(
         "catalog.ProductVariant", on_delete=models.PROTECT, related_name="order_items"
     )
 
-    # Snapshot de información del producto al momento de la compra
-    product_id = models.IntegerField()  # ID del producto base
+    product_id = models.IntegerField()  
     product_name = models.CharField(max_length=200)
     variant_name = models.CharField(max_length=200, blank=True)
     variant_sku = models.CharField(max_length=100, blank=True)
 
-    # Precio y cantidad
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     unit_price = models.DecimalField(
         max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))]
