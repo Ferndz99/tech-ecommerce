@@ -61,7 +61,7 @@ class Order(models.Model):
         validators=[MinMoneyValidator(0)],
         editable=False,
         null=True,
-    )
+    ) # type: ignore
 
     access_token = models.UUIDField(
         default=uuid.uuid4, unique=True, editable=False, db_index=True
@@ -72,6 +72,8 @@ class Order(models.Model):
     payment_reference = models.CharField(
     max_length=255, blank=True, null=True
 )
+    
+    items: models.QuerySet["OrderItem"]
 
     class Meta:
         ordering = ["-created_at"]
@@ -131,15 +133,38 @@ class Order(models.Model):
         for item in self.items.select_related("product_variant"):
             item.product_variant.consume(item.quantity)
 
-        self.status = self.Status.CONFIRMED
-        self.save(update_fields=["status"])
+        # self.status = self.Status.CONFIRMED
+        # self.save(update_fields=["status"])
+        self.change_status(self.Status.CONFIRMED)
 
     def cancel(self):
         if self.status != self.Status.PENDING:
             return
         self.release_stock()
-        self.status = self.Status.CANCELLED
+        # self.status = self.Status.CANCELLED
+        # self.save(update_fields=["status"])
+        self.change_status(self.Status.CANCELLED)
+
+
+    def change_status(self, to_status, *, by=None, notes=""):
+        """
+        Change the order status and record the history
+        """
+        from_status = self.status
+
+        if from_status == to_status:
+            return  # do nothing
+
+        self.status = to_status
         self.save(update_fields=["status"])
+
+        OrderStatusHistory.objects.create(
+            order=self,
+            from_status=from_status,
+            to_status=to_status,
+            changed_by=by,
+            notes=notes,
+        )
 
 
 class OrderItem(models.Model):
@@ -193,7 +218,7 @@ class OrderStatusHistory(models.Model):
     )
 
     notes = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)kj
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
