@@ -2,6 +2,8 @@ from decimal import Decimal
 
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.db import transaction
+from django.core.exceptions import ValidationError
 
 from djmoney.models.fields import MoneyField
 from djmoney.models.validators import MinMoneyValidator
@@ -29,6 +31,10 @@ class ProductVariant(LifeCycleMixin, TimeStampedMixin):
     stock = models.IntegerField(
         default=0, validators=[MinValueValidator(0)], db_index=True
     )
+
+    reserved_stock  = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
     attributes = models.ManyToManyField(
         "AttributeValue", related_name="variants", blank=True
     )
@@ -39,6 +45,27 @@ class ProductVariant(LifeCycleMixin, TimeStampedMixin):
 
     def __str__(self):
         return f"{self.name} ({self.sku})"
+    
+    @property
+    def available_stock(self):
+        return self.stock - self.reserved_stock
+    
+    def reserve(self, quantity):
+        if quantity > self.available_stock:
+            raise ValidationError("Stock insuficiente")
+        self.reserved_stock += quantity
+        self.save(update_fields=["reserved_stock"])
+
+    def release(self, quantity):
+        self.reserved_stock = max(0, self.reserved_stock - quantity)
+        self.save(update_fields=["reserved_stock"])
+
+    def consume(self, quantity):
+        if quantity > self.reserved_stock:
+            raise ValidationError("No hay stock reservado suficiente")
+        self.reserved_stock -= quantity
+        self.stock -= quantity
+        self.save(update_fields=["stock", "reserved_stock"])
 
 
 

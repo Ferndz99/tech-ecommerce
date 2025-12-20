@@ -8,6 +8,7 @@ from djmoney.money import Money
 
 from orders.models import Order, OrderItem, OrderStatusHistory
 from catalog.models.product_variant import ProductVariant
+from orders.utils import send_order_confirmation_email
 
 
 class OrderItemWriteSerializer(serializers.ModelSerializer):
@@ -58,7 +59,8 @@ class OrderWriteSerializer(serializers.ModelSerializer):
             "shipping_country",
             "items",
         ]
-
+        
+    @transaction.atomic
     def validate_items(self, value):
         if not value:
             raise serializers.ValidationError("The order must have at least one item.")
@@ -116,13 +118,13 @@ class OrderWriteSerializer(serializers.ModelSerializer):
             variant = item_data["product_variant"]
             quantity = item_data["quantity"]
 
-            variant.stock -= quantity
-            variant.save(update_fields=["stock"])
+            # variant.stock -= quantity
+            # variant.save(update_fields=["stock"])
 
             unit_price = variant.price.amount
             subtotal = unit_price * quantity
 
-            item = OrderItem.objects.create(
+            OrderItem.objects.create(
                 order=order,
                 product_variant=variant,
                 product_id=variant.product_id,
@@ -138,6 +140,9 @@ class OrderWriteSerializer(serializers.ModelSerializer):
 
         order.total = Money(total_amount, "CLP")
         order.save(update_fields=["total"])
+
+        order.reserve_stock()
+        order.confirm()
 
         transaction.on_commit(lambda: send_order_confirmation_email(order))
 

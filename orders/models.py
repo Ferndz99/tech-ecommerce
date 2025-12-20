@@ -6,6 +6,7 @@ from djmoney.models.fields import MoneyField
 from djmoney.models.validators import MinMoneyValidator
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 from decimal import Decimal
 import uuid
 
@@ -19,9 +20,9 @@ class Order(models.Model):
     """
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pendiente"
-        CONFIRMED = "confirmed", "Confirmada"
-        PROCESSING = "processing", "En proceso"
+        PENDING = "pending", "Pendiente (reservada)"
+        CONFIRMED = "confirmed", "Confirmada (pagada)"
+        CANCELLED = "cancelled", "Cancelada"
 
     # Identificador único para tracking
     order_number = models.CharField(max_length=50, unique=True, editable=False)
@@ -68,6 +69,10 @@ class Order(models.Model):
 
     access_token_expires_at = models.DateTimeField(null=True, blank=True)
 
+    payment_reference = models.CharField(
+    max_length=255, blank=True, null=True
+)
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
@@ -110,6 +115,31 @@ class Order(models.Model):
             self.access_token_expires_at is None
             or self.access_token_expires_at > timezone.now()
         )
+
+    def reserve_stock(self):
+        for item in self.items.select_related("product_variant"):
+            item.product_variant.reserve(item.quantity)
+
+    def release_stock(self):
+        for item in self.items.select_related("product_variant"):
+            item.product_variant.release(item.quantity)
+
+    def confirm(self):
+        if self.status != self.Status.PENDING:
+            raise ValidationError("La orden no puede confirmarse")
+
+        for item in self.items.select_related("product_variant"):
+            item.product_variant.consume(item.quantity)
+
+        self.status = self.Status.CONFIRMED
+        self.save(update_fields=["status"])
+
+    def cancel(self):
+        if self.status != self.Status.PENDING:
+            return
+        self.release_stock()
+        self.status = self.Status.CANCELLED
+        self.save(update_fields=["status"])
 
 
 class OrderItem(models.Model):
@@ -163,7 +193,7 @@ class OrderStatusHistory(models.Model):
     )
 
     notes = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)kj
 
     class Meta:
         ordering = ["-created_at"]

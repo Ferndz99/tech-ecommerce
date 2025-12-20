@@ -1,9 +1,12 @@
+from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework import viewsets, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from orders.models import Order
+from orders.payments.webpay import create_webpay_transaction, handle_webpay_return
 from orders.serializers import (
     OrderWriteSerializer,
     OrderDetailSerializer,
@@ -46,19 +49,13 @@ class OrderViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
 
-
-
 class GuestOrderDetailView(APIView):
     authentication_classes = []
     permission_classes = []
 
     def get(self, request, token):
         try:
-            order = (
-                Order.objects
-                .prefetch_related("items")
-                .get(access_token=token)
-            )
+            order = Order.objects.prefetch_related("items").get(access_token=token)
         except Order.DoesNotExist:
             raise NotFound("Orden no encontrada")
 
@@ -67,3 +64,47 @@ class GuestOrderDetailView(APIView):
 
         serializer = OrderDetailSerializer(order)
         return Response(serializer.data)
+
+
+class WebpayCreateTransactionView(APIView):
+    """
+    Inicia el pago Webpay Plus
+    """
+
+    def post(self, request, order_id):
+        order = get_object_or_404(Order, id=order_id)
+
+        response = create_webpay_transaction(order)
+
+        return Response(
+            {
+                "token": response["token"],
+                "url": response["url"],
+            }
+        )
+
+
+class WebpayReturnView(APIView):
+    """
+    Endpoint llamado por Webpay luego del pago
+    """
+
+    authentication_classes = []
+    permission_classes = []
+
+    @transaction.atomic
+    def post(self, request):
+        token = request.data.get("token")
+
+        if not token:
+            raise ValidationError("Token Webpay no recibido")
+
+        response, order = handle_webpay_return(token)
+
+        return Response(
+            {
+                "order_id": order.pk,
+                "order_number": order.order_number,
+                "webpay_status": response["status"],
+            }
+        )
