@@ -1,10 +1,17 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from orders.views import GuestOrderDetailView, OrderViewSet, WebpayCreateTransactionView, WebpayReturnView
+from orders.views import (
+    GuestOrderDetailView,
+    OrderStatusViewSet,
+    OrderViewSet,
+    WebpayCreateTransactionView,
+    WebpayReturnView,
+)
 
 router = DefaultRouter()
 router.register(r"orders", OrderViewSet, basename="orders")
+router.register(r"order-history", OrderStatusViewSet, basename="order-history")
 
 urlpatterns = [
     path(

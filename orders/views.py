@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
-from orders.models import Order
+from orders.models import Order, OrderStatusHistory
 from orders.payments.webpay import create_webpay_transaction, handle_webpay_return
 from orders.serializers import (
     OrderWriteSerializer,
@@ -108,3 +108,9 @@ class WebpayReturnView(APIView):
                 "webpay_status": response["status"],
             }
         )
+
+
+class OrderStatusViewSet(viewsets.ModelViewSet):
+    queryset = OrderStatusHistory.objects.all()
+    http_method_names = ["get"]
+    serializer_class = OrderStatusHistorySerializer

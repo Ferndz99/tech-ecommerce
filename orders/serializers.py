@@ -176,14 +176,15 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 
 
 class OrderStatusHistorySerializer(serializers.ModelSerializer):
-    changed_by_email = serializers.EmailField(source="changed_by.email", read_only=True)
 
     class Meta:
         model = OrderStatusHistory
         fields = [
+            "id",
+            "order",
             "from_status",
             "to_status",
-            "changed_by_email",
             "notes",
+            "changed_by",
             "created_at",
         ]
