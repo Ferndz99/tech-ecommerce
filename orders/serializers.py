@@ -30,6 +30,7 @@ class OrderItemWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("La cantidad debe ser mayor a 0.")
         return value
 
+
 class OrderItemDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
@@ -41,6 +42,7 @@ class OrderItemDetailSerializer(serializers.ModelSerializer):
             "unit_price",
             "subtotal",
         ]
+
 
 class OrderWriteSerializer(serializers.ModelSerializer):
     items = OrderItemWriteSerializer(many=True)
@@ -59,7 +61,7 @@ class OrderWriteSerializer(serializers.ModelSerializer):
             "shipping_country",
             "items",
         ]
-        
+
     @transaction.atomic
     def validate_items(self, value):
         if not value:
@@ -176,7 +178,6 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 
 
 class OrderStatusHistorySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = OrderStatusHistory
         fields = [
@@ -188,3 +189,42 @@ class OrderStatusHistorySerializer(serializers.ModelSerializer):
             "changed_by",
             "created_at",
         ]
+
+
+class ErrorDetailSerializer(serializers.Serializer):
+    field = serializers.CharField(help_text="Nombre del campo que produjo el error")
+    message = serializers.CharField(help_text="Mensaje de error correspondiente")
+
+    class Meta:
+        ref_name = "CatalogErrorDetails"
+
+
+class ProblemDetailsSerializer(serializers.Serializer):
+    type = serializers.URLField(
+        required=False,
+        allow_null=True,
+        help_text="URL con información del código de estado HTTP",
+    )
+    status = serializers.IntegerField(required=True, help_text="Código de estado HTTP")
+    title = serializers.CharField(required=True, help_text="Título resumido del error")
+    detail = serializers.CharField(
+        required=True, help_text="Descripción detallada del error"
+    )
+    instance = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Ruta o endpoint donde ocurrió el error",
+    )
+    errors = ErrorDetailSerializer(  # type: ignore
+        many=True, required=False, help_text="Lista de errores de validación por campo"
+    )  # type: ignore
+
+    class Meta:
+        ref_name = "CatalogProblemDetails"
+
+
+class DetailResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+
+    class Meta:
+        ref_name = "CatalogResponseDetails"

@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
-from accounts.serializers import ProblemDetailsSerializer
+from orders.serializers import ProblemDetailsSerializer
 from catalog.common.docs.errors import error_401, error_403, error_404, error_500
 from orders.models import Order, OrderStatusHistory
 from orders.payments.webpay import create_webpay_transaction, handle_webpay_return
