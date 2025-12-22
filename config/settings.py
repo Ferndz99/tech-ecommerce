@@ -14,6 +14,9 @@ env = environ.Env()
 
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
+BACKEND_URL = "http://localhost:8000"
+
+
 
 """
 --------------------
@@ -91,6 +94,7 @@ INSTALLED_APPS = [
     # local
     "accounts",
     "catalog",
+    "orders",
 ]
 
 MIDDLEWARE = [

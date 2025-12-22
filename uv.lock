@@ -446,6 +446,18 @@ wheels = [
 ]
 
 [[package]]
+name = "marshmallow"
+version = "3.26.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ab/5e/5e53d26b42ab75491cda89b871dab9e97c840bf12c63ec58a1919710cd06/marshmallow-3.26.1.tar.gz", hash = "sha256:e6d8affb6cb61d39d26402096dc0aee12d5a26d490a121f118d2e81dc0719dc6", size = 221825, upload-time = "2025-02-03T15:32:25.093Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/34/75/51952c7b2d3873b44a0028b1bd26a25078c18f92f256608e8d1dc61b39fd/marshmallow-3.26.1-py3-none-any.whl", hash = "sha256:3350409f20a70a7e4e11a27661187b77cdcaeb20abca41c1454fe33636bea09c", size = 50878, upload-time = "2025-02-03T15:32:22.295Z" },
+]
+
+[[package]]
 name = "nested-multipart-parser"
 version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -890,6 +902,7 @@ dependencies = [
     { name = "pytest" },
     { name = "pytest-django" },
     { name = "qrcode" },
+    { name = "transbank-sdk" },
 ]
 
 [package.metadata]
@@ -913,6 +926,20 @@ requires-dist = [
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-django", specifier = ">=4.11.1" },
     { name = "qrcode", specifier = ">=8.2" },
+    { name = "transbank-sdk", specifier = ">=6.1.0" },
+]
+
+[[package]]
+name = "transbank-sdk"
+version = "6.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "marshmallow" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/91/95/700a6d937a331ac6ff6c73119d905857039ef7297e1da046c70b3efca508/transbank_sdk-6.1.0.tar.gz", hash = "sha256:ee1fd9a4c81dda1478a6a6781b593a6bbb05e9e33a1a4e66a9bbbfe69feed842", size = 25550, upload-time = "2025-06-24T20:12:17.564Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/35/8e0236d743f71ac2d54725e743d0f86931606869048aff3f19c9b55eab29/transbank_sdk-6.1.0-py3-none-any.whl", hash = "sha256:03ea73655b549a2191f30ba0fa6e58304ef529c8e9f2cc9aaa950c188f37f51b", size = 44702, upload-time = "2025-06-24T20:12:15.94Z" },
 ]
 
 [[package]]
